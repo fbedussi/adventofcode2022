@@ -1,5 +1,4 @@
 import fs from 'fs'
-import path from 'path'
 
 const inputTxt = fs.readFileSync('./input.txt', 'utf-8')
 
