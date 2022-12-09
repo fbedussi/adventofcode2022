@@ -42,8 +42,8 @@ lines.forEach(([direction, steps]) => {
         break
     }
 
-    const deltaX = Math.abs(Math.abs(coordsH[0]) - Math.abs(coordsT[0]))
-    const deltaY = Math.abs(Math.abs(coordsH[1]) - Math.abs(coordsT[1]))
+    const deltaX = Math.abs(coordsH[0] - coordsT[0])
+    const deltaY = Math.abs(coordsH[1] - coordsT[1])
 
     if (deltaX > 1 && deltaY === 0) {
       moveX()
