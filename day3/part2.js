@@ -1,4 +1,3 @@
-import { match } from 'assert'
 import fs from 'fs'
 
 const inputTxt = fs.readFileSync('./input.txt', 'utf-8')
