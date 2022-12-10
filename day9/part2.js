@@ -1,6 +1,6 @@
 import fs from 'fs'
 
-const inputTxt = fs.readFileSync('./test-input2.txt', 'utf-8')
+const inputTxt = fs.readFileSync('./input.txt', 'utf-8')
 
 const FIELD_DELIMITER = ' '
 
@@ -10,23 +10,22 @@ const lines = inputTxt.split(/\r?\n/).map((line) => {
   return [direction, Number(steps)]
 })
 
-let coordsH = [0, 0]
-let coordsT = [0, 0]
+const numberOfKnots = 10
+const knots = new Array(numberOfKnots).fill(undefined).map(() => [0, 0])
 
-let history = [coordsT.join(',')]
-
-const moveX = () => {
+const moveX = (coordsH, coordsT) => {
   coordsT[0] += coordsH[0] - coordsT[0] > 0 ? 1 : -1
 }
 
-const moveY = () => {
+const moveY = (coordsH, coordsT) => {
   coordsT[1] += coordsH[1] - coordsT[1] > 0 ? 1 : -1
 }
 
-let counter = 1
+let history = [knots[knots.length - 1].join(',')]
+
 lines.forEach(([direction, steps]) => {
   while (steps > 0) {
-    console.log(counter++, coordsT)
+    const coordsH = knots[0]
     switch (direction) {
       case 'U':
         coordsH[1] -= 1
@@ -41,23 +40,23 @@ lines.forEach(([direction, steps]) => {
         coordsH[0] -= 1
         break
     }
+    for (let i = 0; i < knots.length - 1; i++) {
+      const coordsH = knots[i]
+      const coordsT = knots[i + 1]
 
-    const deltaX = Math.abs(coordsH[0] - coordsT[0])
-    const deltaY = Math.abs(coordsH[1] - coordsT[1])
+      const deltaX = Math.abs(coordsH[0] - coordsT[0])
+      const deltaY = Math.abs(coordsH[1] - coordsT[1])
 
-    if (deltaX > 9 && deltaY === 0) {
-      moveX()
-    } else if (deltaY > 9 && deltaX === 0) {
-      moveY()
-    } else if (deltaX > 9 && deltaY > 0) {
-      moveX()
-      coordsT[1] = coordsH[1]
-    } else if (deltaY > 9 && deltaX > 0) {
-      moveY()
-      coordsT[0] = coordsH[0]
+      if (deltaX > 1 && deltaY === 0) {
+        moveX(coordsH, coordsT)
+      } else if (deltaY > 1 && deltaX === 0) {
+        moveY(coordsH, coordsT)
+      } else if ((deltaX > 1 && deltaY > 0) || (deltaY > 1 && deltaX > 0)) {
+        moveX(coordsH, coordsT)
+        moveY(coordsH, coordsT)
+      }
     }
-
-    history.push(coordsT.join(','))
+    history.push(knots[knots.length - 1].join(','))
 
     steps--
   }
@@ -66,3 +65,4 @@ lines.forEach(([direction, steps]) => {
 // console.log('history', history)
 const result = new Set(history)
 console.log('result', result.size)
+// 2643

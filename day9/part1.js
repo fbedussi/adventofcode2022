@@ -66,3 +66,4 @@ lines.forEach(([direction, steps]) => {
 // console.log('history', history)
 const result = new Set(history)
 console.log('result', result.size)
+// 6406
