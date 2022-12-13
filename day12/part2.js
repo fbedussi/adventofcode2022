@@ -1,73 +1,99 @@
-const realCM = 13 * 2 * 7 * 17 * 5 * 11 * 3 * 19
-const testCM = 23 * 19 * 13 * 17
-const CM = realCM
+import fs from 'fs'
 
-class Monkey {
-  constructor(
-    startingItems,
-    operation,
-    divider,
-    ifTrueThrowsTo,
-    ifFalseThrowsTo,
-  ) {
-    this.startingItems = startingItems
-    this.operation = operation
-    this.divider = divider
-    this.ifTrueThrowsTo = ifTrueThrowsTo
-    this.ifFalseThrowsTo = ifFalseThrowsTo
-    this.counter = 0
-  }
+const inputTxt = fs.readFileSync('./input.txt', 'utf-8')
 
-  playTurn() {
-    while (this.startingItems.length) {
-      const item = this.startingItems.shift()
-      this.counter++
-      const temp = this.operation(item)
-      const newWorryLevel = temp > CM ? temp % CM : temp
-      const destinationMonkey =
-        newWorryLevel % this.divider === 0
-          ? this.ifTrueThrowsTo
-          : this.ifFalseThrowsTo
-      monkeys[destinationMonkey].pickItem(newWorryLevel)
+const map = inputTxt.split(/\r?\n/).map((line) => line.split(''))
+
+const startingPoints = []
+let E
+for (let y = 0; y < map.length; y++) {
+  for (let x = 0; x < map[y].length; x++) {
+    if (map[y][x] === 'S') {
+      map[y][x] = 'a'
+    }
+    if (map[y][x] === 'E') {
+      E = [x, y]
+      map[y][x] = 'z'
+    }
+    map[y][x] = map[y][x].charCodeAt(0) - 97
+    if (map[y][x] === 0) {
+      startingPoints.push([x, y])
     }
   }
+}
 
-  pickItem(item) {
-    this.startingItems.push(item)
+console.log('E', E)
+
+class Node {
+  constructor(parent, x, y) {
+    this.parent = parent
+    this.depth = parent ? parent.depth + 1 : 0
+    this.children = undefined
+    this.x = x
+    this.y = y
   }
 }
 
-const testMonkeys = [
-  new Monkey([79, 98], (old) => old * 19, 23, 2, 3),
-  new Monkey([54, 65, 75, 74], (old) => old + 6, 19, 2, 0),
-  new Monkey([79, 60, 97], (old) => old * old, 13, 1, 3),
-  new Monkey([74], (old) => old + 3, 17, 0, 1),
-]
+let visited = {}
+let queue = []
+let distancies = []
+const visitNode = (node) => {
+  visited[`${node.x},${node.y}`] = true
 
-const realMonkeys = [
-  new Monkey([84, 72, 58, 51], (old) => old * 3, 13, 1, 7),
-  new Monkey([88, 58, 58], (old) => old + 8, 2, 7, 5),
-  new Monkey([93, 82, 71, 77, 83, 53, 71, 89], (old) => old * old, 7, 3, 4),
-  new Monkey([81, 68, 65, 81, 73, 77, 96], (old) => old + 2, 17, 4, 6),
-  new Monkey([75, 80, 50, 73, 88], (old) => old + 3, 5, 6, 0),
-  new Monkey([59, 72, 99, 87, 91, 81], (old) => old * 17, 11, 2, 3),
-  new Monkey([86, 69], (old) => old + 6, 3, 1, 0),
-  new Monkey([91], (old) => old + 1, 19, 2, 5),
-]
+  if (node.x === E[0] && node.y === E[1]) {
+    console.log('END', node.depth)
+    distancies.push(node.depth)
+    return
+  }
 
-const monkeys = realMonkeys
+  if (!node.children) {
+    node.children = []
 
-const rounds = 10000
+    const childrenCoords = []
+    if (node.x > 0) {
+      childrenCoords.push([node.x - 1, node.y])
+    }
+    if (node.y > 0) {
+      childrenCoords.push([node.x, node.y - 1])
+    }
+    if (node.x < map[node.y].length - 1) {
+      childrenCoords.push([node.x + 1, node.y])
+    }
+    if (node.y < map.length - 1) {
+      childrenCoords.push([node.x, node.y + 1])
+    }
 
-for (let round = 1; round <= rounds; round++) {
-  monkeys.forEach((monkey) => monkey.playTurn())
+    childrenCoords
+      .filter(([x, y]) => {
+        const ancestor = x === node.parent?.x && y === node.parent?.y
+
+        const childValue = map[y][x]
+        const nodeValue = map[node.y][node.x]
+        const valueMatch = childValue <= nodeValue + 1
+
+        return !ancestor && valueMatch && !visited[`${x},${y}`]
+      })
+      .forEach((childCoord) => {
+        if (
+          !queue.find(
+            (node) => node.x === childCoord[0] && node.y === childCoord[1],
+          )
+        ) {
+          queue.push(new Node(node, ...childCoord))
+        }
+      })
+  }
+
+  const nextNode = queue.shift()
+  if (nextNode) {
+    visitNode(nextNode)
+  }
 }
 
-monkeys.forEach((monkey, i) => {
-  console.log(i, monkey.counter, monkey.startingItems)
+startingPoints.map((S) => {
+  visited = {}
+  queue = []
+  return visitNode(new Node(null, ...S))
 })
-
-const counters = monkeys.map((monkey) => monkey.counter)
-counters.sort((a, b) => b - a)
-const result = counters[0] * counters[1]
+const result = Math.min(...distancies)
 console.log('result', result)
