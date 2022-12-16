@@ -1,105 +1,77 @@
 import fs from 'fs'
 
-const inputTxt = fs.readFileSync('./input.txt', 'utf-8')
+const isTest = false
+
+const inputTxt = fs.readFileSync(
+  isTest ? './test-input.txt' : './input.txt',
+  'utf-8',
+)
 
 const lines = inputTxt.split(/\r?\n/)
 
 const coords = lines
-  .flat()
-  .flatMap((line) => line.split(' -> '))
-  .map((coord) => coord.split(',').map((n) => Number(n)))
-
-const coordsWithStartingPoint = coords.concat([[500, 0]])
-
-const xs = coordsWithStartingPoint.map(([x]) => x)
-const ys = coordsWithStartingPoint.map(([, y]) => y)
-
-const maxX = Math.max(...xs)
-let minX = Math.min(...xs)
-
-const maxY = Math.max(...ys)
-const minY = Math.min(...ys)
-
-const map = new Array(maxY + 1 + 2)
-  .fill(undefined)
-  .map(() => new Array(maxX + 2 + 200).fill('.'))
-
-lines.forEach((line) => {
-  const coords = line
-    .split(' -> ')
-    .map((str) => str.split(',').map((n) => Number(n)))
-  coords.forEach((coord, index, arr) => {
-    if (index < arr.length - 1) {
-      const start = coord
-      const end = arr[index + 1]
-      let x = start[0]
-      let y = start[1]
-      map[y][x] = '#'
-      while (x !== end[0] || y !== end[1]) {
-        if (x < end[0]) {
-          x++
-        }
-        if (x > end[0]) {
-          x--
-        }
-        if (y < end[1]) {
-          y++
-        }
-        if (y > end[1]) {
-          y--
-        }
-        map[y][x] = '#'
-      }
-    }
+  .map((line) => {
+    const matches = line.match(
+      /Sensor at x=(-?\d+), y=(-?\d+): closest beacon is at x=(-?\d+), y=(-?\d+)/,
+    )
+    return [
+      [Number(matches[1]), Number(matches[2])],
+      [Number(matches[3]), Number(matches[4])],
+    ]
   })
-})
-
-map[map.length - 1] = map[map.length - 1].map(() => '#')
-
-const drawMap = () => {
-  map.forEach((line) => {
-    console.log(line.slice(minX - 1).join(''))
+  .map(([[sx, sy], [bx, by]]) => {
+    const distance = Math.abs(bx - sx) + Math.abs(by - sy)
+    return [sx, sy, distance]
   })
-}
 
-drawMap()
+let emptyX
+let emptyY
 
-let unitOfSand = 0
+for (let resultRow = 0; resultRow <= isTest ? 20 : 4000000; resultRow++) {
+  if (emptyX !== undefined) {
+    break
+  }
 
-const dropSand = () => {
-  unitOfSand++
-  let x = 500
-  let y = 0
-  let rest = false
-  while (!rest) {
-    if (map[y + 1][x] === '.') {
-      y++
-    } else if (map[y + 1][x - 1] === '.') {
-      y++
-      x--
-    } else if (map[y + 1][x + 1] === '.') {
-      y++
-      x++
+  if (resultRow % 1000 === 0) {
+    console.log('analysing row', resultRow)
+  }
+
+  const innerCoords = coords.filter(([sx, sy, distance]) => {
+    return sy >= resultRow - distance && sy <= resultRow + distance
+  })
+
+  const intervals = innerCoords.map(([sx, sy, distance]) => {
+    const minX = sx - (distance - Math.abs(resultRow - sy))
+    const maxX = sx + (distance - Math.abs(resultRow - sy))
+    return [Math.max(0, minX), Math.min(maxX, isTest ? 20 : 4000000)]
+  })
+  intervals.sort((a, b) => a[0] - b[0])
+
+  let joinedIntervals = []
+  let item = intervals.shift()
+  let min = item[0]
+  let max = item[1]
+  while (item) {
+    let nextItem = !!intervals.length && intervals.shift()
+    if (!nextItem) {
+      joinedIntervals.push([min, max])
+    } else if (nextItem[1] < max) {
+    } else if (nextItem[0] <= max && nextItem[1] >= max) {
+      max = nextItem[1]
     } else {
-      rest = true
+      joinedIntervals.push([min, max])
     }
+    item = nextItem
   }
 
-  if (x < minX) {
-    minX = x
+  const emptyCellX = joinedIntervals.length > 1 && joinedIntervals[0][1] + 1
+  if (emptyCellX) {
+    emptyX = emptyCellX
+    emptyY = resultRow
+    console.log('emptyCell', emptyCellX, resultRow)
   }
-
-  if (rest) {
-    map[y][x] = 'o'
-  }
-
-  console.log(x)
-  return y !== 0
 }
 
-while (dropSand()) {
-  // console.log(unitOfSand)
-}
-
-drawMap()
-console.log('result', unitOfSand)
+const result = emptyX * 4000000 + emptyY
+console.log('result', result)
+console.assert(result === 13350458933732)
