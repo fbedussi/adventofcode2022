@@ -1,6 +1,6 @@
 import fs from 'fs'
 
-const isTest = true
+const isTest = false
 
 const inputTxt = fs.readFileSync(
   isTest ? './test-input.txt' : './input.txt',
@@ -24,7 +24,7 @@ const coords = lines
   .filter(([[sx, sy], [bx, by]]) => {
     const distance = Math.abs(bx - sx) + Math.abs(by - sy)
 
-    return sy > resultRow - distance && sy < resultRow + distance
+    return sy >= resultRow - distance && sy <= resultRow + distance
   })
 
 const beaconCoordsOnResultRow = new Set(
@@ -36,9 +36,8 @@ const beaconCoordsOnResultRow = new Set(
 const busyCells = coords.reduce((result, [[sx, sy], [bx, by]]) => {
   const distance = Math.abs(bx - sx) + Math.abs(by - sy)
 
-  const totCells = 1 + 2 * (distance - (resultRow - sy))
-  const minX = sx - Math.floor(totCells / 2)
-  const maxX = sx + Math.floor(totCells / 2)
+  const minX = sx - (distance - Math.abs(resultRow - sy))
+  const maxX = sx + (distance - Math.abs(resultRow - sy))
   for (let i = minX; i <= maxX; i++) {
     result.add(i)
   }
@@ -47,4 +46,3 @@ const busyCells = coords.reduce((result, [[sx, sy], [bx, by]]) => {
 
 const result = busyCells.size - beaconCoordsOnResultRow.size
 console.log('result', result)
-// 5198895 high

@@ -10,21 +10,15 @@ const resultRow = isTest ? 10 : 2000000
 
 const lines = inputTxt.split(/\r?\n/)
 
-const coords = lines
-  .map((line) => {
-    const matches = line.match(
-      /Sensor at x=(-?\d+), y=(-?\d+): closest beacon is at x=(-?\d+), y=(-?\d+)/,
-    )
-    return [
-      [Number(matches[1]), Number(matches[2])],
-      [Number(matches[3]), Number(matches[4])],
-    ]
-  })
-  .filter(([[sx, sy], [bx, by]]) => {
-    const distance = Math.abs(bx - sx) + Math.abs(by - sy)
-
-    return sy > resultRow - distance && sy < resultRow + distance
-  })
+const coords = lines.map((line) => {
+  const matches = line.match(
+    /Sensor at x=(-?\d+), y=(-?\d+): closest beacon is at x=(-?\d+), y=(-?\d+)/,
+  )
+  return [
+    [Number(matches[1]), Number(matches[2])],
+    [Number(matches[3]), Number(matches[4])],
+  ]
+})
 
 const minMaxXY = coords.map(([[sx, sy], [bx, by]]) => {
   const distance = Math.abs(bx - sx) + Math.abs(by - sy)
@@ -60,10 +54,12 @@ console.log(2)
 const drawMap = () => {
   map.forEach((line, index) => {
     const y = index - offsetY
-    console.log(
-      `${y < 0 ? '-' : '+'}${Math.abs(y) < 10 ? '0' : ''}${Math.abs(y)}`,
-      line.join(''),
-    )
+    if (y >= 0 && y <= 20) {
+      console.log(
+        `${y < 0 ? '-' : '+'}${Math.abs(y) < 10 ? '0' : ''}${Math.abs(y)}`,
+        line.slice(offsetX, offsetX + 20).join(''),
+      )
+    }
   })
 }
 
