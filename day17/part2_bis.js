@@ -8,21 +8,34 @@ const inputTxt = fs.readFileSync(
 
 const directions = inputTxt.split(/\r?\n/)[0].split('')
 
+const END = 17293 * 3 + 2022
+
+console.log('expected result', 26442 * 3 + 3090)
+
 console.log((directions.length * 10) / 5)
 
-function* circularArray(arr) {
+function* circularArray(arr, breakAfter) {
   let i = 0
+  let cycle = 1
   while (true) {
     yield arr[i]
     if (i < arr.length - 1) {
       i++
     } else {
       i = 0
+      // breakAfter && console.log('cycle', cycle)
+      // if (cycle === breakAfter) {
+      //   console.log('result caclulated', highestLevel)
+      //   console.log('rocksStopped', rocksStopped)
+      //   console.log(END % rocksStopped)
+      //   break
+      // }
+      // cycle++
     }
   }
 }
 
-const getDirection = circularArray(directions)
+const getDirection = circularArray(directions, 10)
 // console.log(getDirections.next().value)
 
 const hBar = [['-', '-', '-', '-']]
@@ -59,7 +72,7 @@ let highestLevel = 0
 let rocksStopped = 0
 
 const emptyRow = new Array(WIDTH).fill('')
-let field = []
+const field = [emptyRow.slice()]
 
 function* iterator() {
   let i = 0
@@ -69,7 +82,6 @@ function* iterator() {
 }
 
 const addShapeToField = (shape, left, bottom) => {
-  const initialFieldLength = field.length
   for (let shapeY = 0; shapeY < shape.length; shapeY++) {
     for (let shapeX = 0; shapeX < shape[0].length; shapeX++) {
       if (shape[shapeY][shapeX]) {
@@ -82,14 +94,6 @@ const addShapeToField = (shape, left, bottom) => {
       }
     }
   }
-  const finalFieldLength = field.length
-  const delta = finalFieldLength - initialFieldLength
-
-  if (finalFieldLength > 20000) {
-    field.splice(0, 10000)
-  }
-
-  return delta
 }
 
 const printField = () => {
@@ -124,16 +128,14 @@ const checkSpace = (shape, left, bottom) => {
   // [shape.length - 1]
 }
 
-while (rocksStopped < 10000000) {
+while (rocksStopped < END) {
   let rockStopped = false
   const shape = getShape.next().value
   let left = LEFT_START
   let bottom = BOTTOM_START + highestLevel
   const getIteration = iterator()
 
-  if (rocksStopped % 1_000_000 === 0) {
-    console.log('rocksStopped', rocksStopped)
-  }
+  // console.log('rocksStopped', rocksStopped)
   while (!rockStopped) {
     const iteration = getIteration.next().value
     // console.log('iteration', iteration)
@@ -156,10 +158,10 @@ while (rocksStopped < 10000000) {
       if (checkSpace(shape, left, bottom - 1)) {
         bottom--
       } else {
-        const delta = addShapeToField(shape, left, bottom)
+        addShapeToField(shape, left, bottom)
         rockStopped = true
         rocksStopped++
-        highestLevel += delta
+        highestLevel = field.length
         // printField()
         // console.log('tower tall', highestLevel, '\n')
       }
